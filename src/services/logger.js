@@ -27,8 +27,19 @@ export const flushQueuedLogs = async () => {
     const q = JSON.parse(localStorage.getItem(LOG_QUEUE_KEY) || "[]");
     if (!Array.isArray(q) || q.length === 0) return;
 
-    const base = process.env.REACT_APP_API_BASE_URL || "";
-    const url = `${base}/logs`;
+    const base =
+      process.env.REACT_APP_API_BASE_URL ||
+      process.env.REACT_APP_BLOG_API_BASE_URL ||
+      process.env.REACT_APP_AUTH_API_BASE_URL ||
+      process.env.REACT_APP_AUTH_API ||
+      "";
+
+    if (!base) {
+      // Nothing to flush if we still don't know where to send logs.
+      return;
+    }
+
+    const url = `${base.replace(/\/$/, "")}/logs`;
 
     // send logs one by one to avoid large payloads and allow partial success
     const remaining = [];
@@ -58,14 +69,21 @@ export const logError = async (err, context = {}) => {
   // Always print to console for immediate visibility
   console.error("[Logger]", payload);
 
-  const base = process.env.REACT_APP_API_BASE_URL || "";
+  // Accept multiple env names: prefer REACT_APP_API_BASE_URL, then specific blog/auth bases
+  const base =
+    process.env.REACT_APP_API_BASE_URL ||
+    process.env.REACT_APP_BLOG_API_BASE_URL ||
+    process.env.REACT_APP_AUTH_API_BASE_URL ||
+    process.env.REACT_APP_AUTH_API ||
+    "";
+
   if (!base) {
-    // If no backend base is configured, just queue and return
+    // If no backend base is configured, queue for later delivery (relative posts would target the site origin)
     enqueueLog(payload);
     return;
   }
 
-  const url = `${base}/logs`;
+  const url = `${base.replace(/\/$/, "")}/logs`;
   try {
     await fetch(url, {
       method: "POST",

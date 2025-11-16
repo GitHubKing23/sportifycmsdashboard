@@ -1,15 +1,14 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
-// ✅ Navigation
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// ✅ Pages
 import Dashboard from "./pages/Dashboard";
 import CreateBlogPage from "./pages/CreateBlogPage";
 import EditBlog from "./pages/EditBlog";
+import Login from "./pages/Login";
 
-// ✅ Blog Views
 import BlogList from "./components/BlogList";
 import BlogDetail from "./components/BlogDetails";
 import FeaturedBlog from "./components/FeaturedBlog";
@@ -20,34 +19,89 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        {/* ✅ Global Navigation Bar */}
         <Navbar />
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        {/* ✅ Main App Content */}
-        <div style={{ padding: "20px" }}>
-          <Routes>
-          {/* ✅ Admin Dashboard */}
-          <Route path="/" element={<Dashboard />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <Dashboard />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ Create Blog */}
-          <Route path="/create" element={<CreateBlogPage />} />
+          <Route
+            path="/create"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <CreateBlogPage />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ Edit Blog */}
-          <Route path="/edit/:id" element={<EditBlog />} />
+          <Route
+            path="/edit/:id"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <EditBlog />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ Blog Details */}
-          <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route
+            path="/blog/:id"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <BlogDetail />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ All Blogs */}
-          <Route path="/blogs" element={<BlogList />} />
+          <Route
+            path="/blogs"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <BlogList />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ Featured Blogs */}
-          <Route path="/featured-blogs" element={<FeaturedBlog />} />
+          <Route
+            path="/manage-blogs"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <BlogList />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ✅ Fallback to Dashboard */}
+          <Route
+            path="/featured-blogs"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "20px" }}>
+                  <FeaturedBlog />
+                </div>
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
+        </Routes>
       </Router>
     </AuthProvider>
   );

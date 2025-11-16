@@ -2,9 +2,18 @@ import axios from "axios";
 import { logError, flushQueuedLogs } from "./logger";
 
 // Support two separate backends: auth and blog
-// Make sure fallback matches your local setup (no /api suffix if backend root is '/').
-const AUTH_BASE = process.env.REACT_APP_AUTH_API_BASE_URL || "http://localhost:5000/";
-const BLOG_BASE = process.env.REACT_APP_BLOG_API_BASE_URL || "http://localhost:5001/";
+// Accept multiple env var names to match different deploy setups:
+// - REACT_APP_AUTH_API_BASE_URL (preferred)
+// - REACT_APP_AUTH_API (legacy/alternate)
+// - REACT_APP_API_BASE_URL (fallback common variable for both)
+const AUTH_BASE =
+  process.env.REACT_APP_AUTH_API ||
+  process.env.REACT_APP_AUTH_API_BASE_URL ||
+  process.env.REACT_APP_API_BASE_URL ||
+  "http://localhost:5000/";
+
+// Blog API base: prefer specific blog var, then generic API_BASE
+const BLOG_BASE = process.env.REACT_APP_BLOG_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "http://localhost:5001/";
 
 // Allow toggling credentials usage from env for easier debugging during CORS issues
 const AUTH_WITH_CREDENTIALS = process.env.REACT_APP_AUTH_WITH_CREDENTIALS !== "false";
@@ -192,23 +201,6 @@ const apiClients = { authApi, blogApi };
 export default apiClients;
 
 // Small helpers for runtime connectivity checks from the frontend
-export const pingAuthRoot = async () => {
-  try {
-    return await authApi.get("/");
-  } catch (err) {
-    throw err;
-  }
-};
-
-export const pingAuthNonce = async () => {
-  try {
-    // safe test using the auth nonce endpoint with a dummy address
-    return await authApi.post("/auth/nonce", { address: "0x0000000000000000000000000000000000000000" });
-  } catch (err) {
-    throw err;
-  }
-};
-
 export const pingBlogRoot = async () => {
   try {
     return await blogApi.get("/");

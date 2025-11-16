@@ -1,8 +1,14 @@
-import { Link, useLocation } from "react-router-dom";
-import MetamaskLogin from "./MetamaskLogin";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const getActiveStyle = (path) => ({
     fontWeight: location.pathname === path ? "bold" : "normal",
@@ -52,8 +58,25 @@ const Navbar = () => {
         <li>
           <Link to="/profile" style={getActiveStyle("/profile")}>👤 Profile</Link>
         </li>
-        <li style={{ marginLeft: 12 }}>
-          <MetamaskLogin />
+        <li style={{ marginLeft: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 14, color: "#333" }}>{user?.email}</span>
+            <button
+              onClick={() => {
+                logout();
+                navigate("/login", { replace: true });
+              }}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 6,
+                border: "1px solid #ddd",
+                background: "white",
+                cursor: "pointer",
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </li>
       </ul>
     </nav>
