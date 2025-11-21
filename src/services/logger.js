@@ -1,7 +1,9 @@
-// Logger service: attempts to POST logs to backend using REACT_APP_API_BASE_URL
+// Logger service: attempts to POST logs to metrics backend
 // If backend is unreachable, queue logs in localStorage and retry later.
 
 const LOG_QUEUE_KEY = "error_log_queue";
+const METRICS_BASE = "https://metrics.sportifyinsider.com";
+const LOG_ENDPOINT = `${METRICS_BASE}/logs`;
 
 const buildPayload = (err, context = {}) => ({
   message: err?.message || String(err) || "Unknown error",
@@ -27,25 +29,11 @@ export const flushQueuedLogs = async () => {
     const q = JSON.parse(localStorage.getItem(LOG_QUEUE_KEY) || "[]");
     if (!Array.isArray(q) || q.length === 0) return;
 
-    const base =
-      process.env.REACT_APP_API_BASE_URL ||
-      process.env.REACT_APP_BLOG_API_BASE_URL ||
-      process.env.REACT_APP_AUTH_API_BASE_URL ||
-      process.env.REACT_APP_AUTH_API ||
-      "";
-
-    if (!base) {
-      // Nothing to flush if we still don't know where to send logs.
-      return;
-    }
-
-    const url = `${base.replace(/\/$/, "")}/logs`;
-
     // send logs one by one to avoid large payloads and allow partial success
     const remaining = [];
     for (const item of q) {
       try {
-        await fetch(url, {
+        await fetch(LOG_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(item),
@@ -69,23 +57,8 @@ export const logError = async (err, context = {}) => {
   // Always print to console for immediate visibility
   console.error("[Logger]", payload);
 
-  // Accept multiple env names: prefer REACT_APP_API_BASE_URL, then specific blog/auth bases
-  const base =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_BLOG_API_BASE_URL ||
-    process.env.REACT_APP_AUTH_API_BASE_URL ||
-    process.env.REACT_APP_AUTH_API ||
-    "";
-
-  if (!base) {
-    // If no backend base is configured, queue for later delivery (relative posts would target the site origin)
-    enqueueLog(payload);
-    return;
-  }
-
-  const url = `${base.replace(/\/$/, "")}/logs`;
   try {
-    await fetch(url, {
+    await fetch(LOG_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

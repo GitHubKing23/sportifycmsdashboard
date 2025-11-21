@@ -1,37 +1,24 @@
 import axios from "axios";
 import { logError, flushQueuedLogs } from "./logger";
 
-// Support two separate backends: auth and blog
-// Accept multiple env var names to match different deploy setups:
-// - REACT_APP_AUTH_API_BASE_URL (preferred)
-// - REACT_APP_AUTH_API (legacy/alternate)
-// - REACT_APP_API_BASE_URL (fallback common variable for both)
-const AUTH_BASE =
-  process.env.REACT_APP_AUTH_API ||
-  process.env.REACT_APP_AUTH_API_BASE_URL ||
-  process.env.REACT_APP_API_BASE_URL ||
-  "http://localhost:5000/";
+const AUTH_BASE = "https://auth.sportifyinsider.com";
+const BLOG_BASE = "https://api.sportifyinsider.com";
+const METRICS_BASE = "https://metrics.sportifyinsider.com";
 
-// Blog API base: prefer specific blog var, then generic API_BASE
-const BLOG_BASE = process.env.REACT_APP_BLOG_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "http://localhost:5001/";
+const createClient = (baseURL) =>
+  axios.create({
+    baseURL,
+    withCredentials: true,
+    timeout: 20000,
+  });
 
-// Allow toggling credentials usage from env for easier debugging during CORS issues
-const AUTH_WITH_CREDENTIALS = process.env.REACT_APP_AUTH_WITH_CREDENTIALS !== "false";
-const authApi = axios.create({
-  baseURL: AUTH_BASE,
-  withCredentials: AUTH_WITH_CREDENTIALS,
-  // increase timeout for initial debugging (was 10000ms)
-  timeout: Number(process.env.REACT_APP_AUTH_TIMEOUT_MS) || 20000,
-});
-
-const blogApi = axios.create({
-  baseURL: BLOG_BASE,
-  withCredentials: true,
-  timeout: 10000,
-});
+const authApi = createClient(AUTH_BASE);
+const blogApi = createClient(BLOG_BASE);
+const metricsApi = createClient(METRICS_BASE);
 
 console.log("🌍 authApi ->", authApi.defaults.baseURL);
 console.log("🌍 blogApi ->", blogApi.defaults.baseURL);
+console.log("🌍 metricsApi ->", metricsApi.defaults.baseURL);
 
 // Flush any queued logs (attempt) on init
 flushQueuedLogs().catch((e) => console.warn("Failed to flush queued logs on init:", e));
@@ -195,9 +182,10 @@ function attachInterceptor(instance, name) {
 
 attachInterceptor(authApi, "authApi");
 attachInterceptor(blogApi, "blogApi");
+attachInterceptor(metricsApi, "metricsApi");
 
-export { authApi, blogApi };
-const apiClients = { authApi, blogApi };
+export { authApi, blogApi, metricsApi };
+const apiClients = { authApi, blogApi, metricsApi };
 export default apiClients;
 
 // Small helpers for runtime connectivity checks from the frontend
