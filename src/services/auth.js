@@ -1,3 +1,4 @@
+
 import { authApi } from "./api";
 import { logError } from "./logger";
 
@@ -39,14 +40,14 @@ export const loginWithEmail = async (email, password) => {
 
 export const refreshSession = async (refreshToken) => {
   try {
-    // 🔥 CORRECTED ENDPOINT — backend route requires /api/auth/refresh
-    const res = await authApi.post("/api/auth/refresh", { refreshToken });
+    // 🔥 FIXED: AUTH BACKEND USES /refresh, NOT /api/auth/refresh
+    const res = await authApi.post("/refresh", { refreshToken });
     return res.data;
   } catch (err) {
     console.warn("⚠ refresh failed — continuing without refresh instead of forcing logout");
     await logAxiosFailure(err, { op: "refreshSession" });
 
-    // 🚫 Do NOT throw — throwing would restart login loop
+    // ⛔ Do NOT throw — prevents login redirect loop
     return null;
   }
 };
