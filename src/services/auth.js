@@ -7,9 +7,18 @@ const logAxiosFailure = async (err, context) => {
       message: err.message,
       code: err.code,
       isAxiosError: err.isAxiosError,
-      config: err.config && { url: err.config.url, method: err.config.method, baseURL: err.config.baseURL },
+      config:
+        err.config && {
+          url: err.config.url,
+          method: err.config.method,
+          baseURL: err.config.baseURL,
+        },
       request: Boolean(err.request),
-      response: err.response && { status: err.response.status, data: err.response.data },
+      response:
+        err.response && {
+          status: err.response.status,
+          data: err.response.data,
+        },
     };
     console.error(`❌ ${context.op} failed (detailed):`, info);
     await logError(err, { ...context, debug: info });
@@ -30,10 +39,14 @@ export const loginWithEmail = async (email, password) => {
 
 export const refreshSession = async (refreshToken) => {
   try {
-    const res = await authApi.post("/refresh", { refreshToken });
+    // 🔥 CORRECTED ENDPOINT — backend route requires /api/auth/refresh
+    const res = await authApi.post("/api/auth/refresh", { refreshToken });
     return res.data;
   } catch (err) {
+    console.warn("⚠ refresh failed — continuing without refresh instead of forcing logout");
     await logAxiosFailure(err, { op: "refreshSession" });
-    throw err;
+
+    // 🚫 Do NOT throw — throwing would restart login loop
+    return null;
   }
 };
