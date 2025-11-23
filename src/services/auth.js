@@ -41,7 +41,7 @@ export const loginWithEmail = async (email, password) => {
 export const refreshSession = async (refreshToken) => {
   try {
     // 🔥 FIXED: AUTH BACKEND USES /refresh, NOT /api/auth/refresh
-    const res = await authApi.post("/refresh", { refreshToken });
+    const res = await authApi.post("/api/auth/refresh", { refreshToken });
     return res.data;
   } catch (err) {
     console.warn("⚠ refresh failed — continuing without refresh instead of forcing logout");
