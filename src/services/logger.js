@@ -1,6 +1,7 @@
-// Logger service: attempts to POST logs to metrics backend
-// If backend is unreachable, queue logs in localStorage and retry later.
+// Logger service: prevents CPU freeze by disabling remote /logs calls for now.
+// Remote logs can be re-enabled later when the /logs endpoint is ready.
 
+const ENABLE_REMOTE_LOGS = false; // 🚨 turn ON later when backend /logs exists
 const LOG_QUEUE_KEY = "error_log_queue";
 const METRICS_BASE = "https://metrics.sportifyinsider.com";
 const LOG_ENDPOINT = `${METRICS_BASE}/logs`;
@@ -25,11 +26,13 @@ export const enqueueLog = (payload) => {
 };
 
 export const flushQueuedLogs = async () => {
+  // 🔥 disable sending queued logs to backend (prevents infinite retries)
+  if (!ENABLE_REMOTE_LOGS) return;
+
   try {
     const q = JSON.parse(localStorage.getItem(LOG_QUEUE_KEY) || "[]");
     if (!Array.isArray(q) || q.length === 0) return;
 
-    // send logs one by one to avoid large payloads and allow partial success
     const remaining = [];
     for (const item of q) {
       try {
@@ -40,7 +43,6 @@ export const flushQueuedLogs = async () => {
           credentials: "include",
         });
       } catch (e) {
-        // keep for later
         remaining.push(item);
       }
     }
@@ -54,8 +56,11 @@ export const flushQueuedLogs = async () => {
 export const logError = async (err, context = {}) => {
   const payload = buildPayload(err, context);
 
-  // Always print to console for immediate visibility
+  // Always show error instantly in console for debugging
   console.error("[Logger]", payload);
+
+  // 🔥 block POST requests to /logs completely
+  if (!ENABLE_REMOTE_LOGS) return;
 
   try {
     await fetch(LOG_ENDPOINT, {
@@ -65,11 +70,9 @@ export const logError = async (err, context = {}) => {
       credentials: "include",
     });
   } catch (e) {
-    // On failure, enqueue for later delivery
     enqueueLog(payload);
   }
 };
 
 const logger = { logError, flushQueuedLogs, enqueueLog };
-
 export default logger;
